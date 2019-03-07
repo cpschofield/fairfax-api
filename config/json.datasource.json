@@ -1,0 +1,5 @@
+{
+  "name": "jsonStorage",
+  "connector": "memory",
+  "file": "stored.json"
+}
