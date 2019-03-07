@@ -30,7 +30,7 @@ export class Article extends Entity {
   @property.array(String, {
     required: true,
   })
-  tags: string;
+  tags: string[];
 
   constructor(data?: Partial<Article>) {
     super(data);

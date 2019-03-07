@@ -18,12 +18,12 @@ export class Tag extends Entity {
   @property.array(String, {
     required: true,
   })
-  articles: string;
+  articles: string[];
 
   @property.array(String, {
     required: true,
   })
-  related_tags: string;
+  related_tags: string[];
 
   constructor(data?: Partial<Tag>) {
     super(data);
