@@ -34,7 +34,7 @@ export class ArticleController {
   @get('/articles/{id}', {
     responses: {
       '200': {
-        description: 'returns a single article record by id',
+        description: 'gets a single article record by id',
         content: {
           'application/json': {
             schema: {

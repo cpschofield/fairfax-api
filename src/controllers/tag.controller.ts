@@ -1,6 +1,6 @@
 import {Tag, Article} from '../models';
 import {ArticleRepository} from '../repositories';
-import {get, param} from '@loopback/rest';
+import {get, param, HttpErrors} from '@loopback/rest';
 import {repository} from '@loopback/repository';
 
 /**
@@ -15,7 +15,7 @@ export class TagController {
   @get('/tag/{tagName}/{date}', {
     responses: {
       '200': {
-        description: 'returns a tag selected by tagName and date',
+        description: 'gets a tag selected by tagName and date',
         content: {
           'application/json': {
             schema: {
@@ -28,13 +28,19 @@ export class TagController {
   })
   async findTagByNameAndDate(
     @param.path.string('tagName') name: string,
-    @param.path.string('date') date: string,
-  ): Promise<any> {
+    @param.path.number('date') date: number,
+  ): Promise<Tag> {
+    // handle invalid date parameter format
+    if (date.toString().length !== 8)
+      throw new HttpErrors.BadRequest(
+        `Date parameter must be a valid date in the format YYYYMMDD`,
+      );
+
     const response: Tag = new Tag({tag: name});
     const articles: Article[] = await this.article.find();
 
     // filter all articles for instance of tag name
-    const articlesByTagName: Article[] = (await this.article.find()).filter(
+    const articlesByTagName: Article[] = articles.filter(
       (article: Article) => article.tags.indexOf(name) !== -1,
     );
 
@@ -43,45 +49,38 @@ export class TagController {
      * "The count field shows the number of tags for the tag for that day."
      * was that this referred to the supplied date
      */
-    const articlesByDate: Article[] = articles.filter(
-      (article: Article) => article.date.split('-').join('') === date,
+    const articlesByDate: Article[] = articlesByTagName.filter(
+      (article: Article) => +article.date.split('-').join('') === date,
     );
     response.count = articlesByDate.length;
+
+    // return early because there are no articles with this tag on the date provided
+    if (response.count === 0) {
+      response.articles = [];
+      response.related_tags = [];
+      return response;
+    }
+
     /*
      * The assumption I've made here is that without a more precise date value
      * I will just select ten records as ID is a string and
-     * cannot be reliably sorted by order of entry
+     * cannot be sorted further by chronological order
      */
     response.articles = [...articlesByDate.map(({id}) => id).slice(0, 10)];
-    const relatedTags = [...articlesByTagName.map(({tags}) => tags)];
-    response.related_tags;
-    // {
-    // 	 "tag" : "health",
-    // 	 "count" : 17,
-    // 	 "articles" : [
-    // 		 "1",
-    // 		 "7"
-    // 	 ],
-    // 	 "related_tags" : [
-    // 	 	 "science",
-    // 		 "fitness"
-    // 	 ]
-    // }
+    const relatedTags: string[] = articlesByDate
+      // get all tags
+      .map(({tags}) => tags)
+      // reduce all tags to a single array
+      .reduce((acc: string[], val: string[]) => {
+        return [...acc, ...val];
+      })
+      // remove non unique tags and queried tagName
+      .filter((tag: string, index: number, arr: string[]) => {
+        return arr.indexOf(tag) === index && tag !== name;
+      });
 
-    // The related_tags field contains a list of tags that are on the articles
-    // that the current tag is on for the same day.
-    //  - It should not contain duplicates.
+    response.related_tags = relatedTags;
 
-    // The count field shows the number of tags for the tag for that day.
-
-    // The articles field contains a list of ids for the
-    // last 10 articles entered for that day.
-
-    // step 1. search all articles for tag name
-    // step 2. count the number of references of the tag
-    // step 3. for each of the articles find other unique tags
-    // step 4. limit to the last 10 article ids that match supplied day
-
-    return relatedTags;
+    return response;
   }
 }
