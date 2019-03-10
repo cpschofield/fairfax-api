@@ -48,11 +48,26 @@ describe('Tag Controller', () => {
           .expect(200, toJSON(tag));
       });
 
-      // it('returns a tag with count 0, empty related_tags and empty articles for a tag with no entries on the supplied date', () => {
-      //   return client
-      //     .get('/tag/missingtag/20160922')
-      //     .expect(200, toJSON(givenTag));
-      // });
+      it('returns a tag with count 0, empty related_tags and empty articles for a tag with no entries on the supplied date', async () => {
+        const tag = await givenTagInstance({
+          tag: 'missingtag',
+          count: 0,
+          articles: [],
+          related_tags: [],
+        });
+        return client.get('/tag/missingtag/20160922').expect(200, toJSON(tag));
+      });
+
+      it('returns a tag with a count of 15 and 10 articles for a tag on the supplied date', async () => {
+        await givenArticleInstances();
+        const tag = await givenTagInstance({
+          tag: 'testing',
+          count: 15,
+          articles: ['0', '1', '10', '11', '12', '13', '14', '2', '3', '4'],
+          related_tags: ['facts', 'logic', 'science'],
+        });
+        return client.get('/tag/testing/20160923').expect(200, toJSON(tag));
+      });
     },
   );
 
@@ -72,6 +87,16 @@ describe('Tag Controller', () => {
 
   async function givenArticleInstance(article?: Partial<Article>) {
     return await articleRepo.create(givenArticle(article));
+  }
+
+  async function givenArticleInstances() {
+    const tags = ['facts', 'testing', 'logic', 'science'];
+    for (let i = 0; i < 15; i++) {
+      await givenArticleInstance({
+        id: i.toString(),
+        tags,
+      });
+    }
   }
 
   async function givenTagInstance(tag?: Partial<Tag>) {

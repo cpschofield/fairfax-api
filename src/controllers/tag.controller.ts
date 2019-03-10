@@ -65,8 +65,11 @@ export class TagController {
      * The assumption I've made here is that without a more precise date value
      * I will just select ten records as ID is a string and
      * cannot be sorted further by chronological order
+     * Instead I have sorted alphabetically
      */
-    response.articles = [...articlesByDate.map(({id}) => id).slice(0, 10)];
+    response.articles = [...articlesByDate.map(({id}) => id).slice(0, 10)].sort(
+      (a, b) => (a > b ? 1 : -1),
+    );
     const relatedTags: string[] = articlesByDate
       // get all tags
       .map(({tags}) => tags)
@@ -79,7 +82,7 @@ export class TagController {
         return arr.indexOf(tag) === index && tag !== name;
       });
 
-    response.related_tags = relatedTags;
+    response.related_tags = relatedTags.sort((a, b) => (a > b ? 1 : -1));
 
     return response;
   }

@@ -18,6 +18,10 @@ export function givenArticle(article?: Partial<Article>): Article {
   return new Article(data);
 }
 
+/**
+ * Generate a complete Tag object for use with tests.
+ * @param tag A partial (or complete) Tag object.
+ */
 export function givenTag(tag?: Partial<Tag>): Tag {
   const data = Object.assign(
     {
